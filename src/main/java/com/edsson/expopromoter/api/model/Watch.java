@@ -1,6 +1,8 @@
 package com.edsson.expopromoter.api.model;
 
 
+import com.edsson.expopromoter.api.model.json.JsonWatch;
+
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 
@@ -18,7 +20,16 @@ public class Watch extends BaseModel {
 
     @NotNull
     @Column(name = "group")
-    private String group;
+    private int group;
+
+
+    public Watch() {
+    }
+
+    public Watch(JsonWatch jsonWatch) {
+        this.ip = jsonWatch.getIp();
+        this.group = jsonWatch.getGroup();
+    }
 
     public Long getId() {
         return id;
@@ -36,11 +47,11 @@ public class Watch extends BaseModel {
         this.ip = ip;
     }
 
-    public String getGroup() {
+    public int getGroup() {
         return group;
     }
 
-    public void setGroup(String group) {
+    public void setGroup(int group) {
         this.group = group;
     }
 

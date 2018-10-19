@@ -1,10 +1,12 @@
 package com.edsson.expopromoter.api.controller;
 
 
+import com.edsson.expopromoter.api.model.Watch;
 import com.edsson.expopromoter.api.model.json.JsonApk;
 import com.edsson.expopromoter.api.model.json.JsonUpdatedApks;
 import com.edsson.expopromoter.api.model.json.JsonWatch;
 import com.edsson.expopromoter.api.service.ApkService;
+import com.edsson.expopromoter.api.service.WatchService;
 import io.swagger.annotations.Api;
 import net.dongliu.apk.parser.ApkFile;
 import net.dongliu.apk.parser.bean.ApkMeta;
@@ -40,10 +42,11 @@ import java.util.List;
 public class AdministratorController {
     private final Logger logger = Logger.getLogger(AdministratorController.class);
     private final ApkService apkService;
-
+private final WatchService watchService;
     @Autowired
-    public AdministratorController(ApkService apkService) {
+    public AdministratorController(WatchService watchService, ApkService apkService) {
         this.apkService = apkService;
+        this.watchService = watchService;
     }
 
     @Value("${file.url}")
@@ -134,8 +137,15 @@ public class AdministratorController {
 
     @RequestMapping("/signupWatch")
     public void signupWatch(@RequestBody JsonWatch jsonWatch )  {
-
+        logger.info("REQUEST: /signupWatch");
+        watchService.signupWatch(jsonWatch);
     }
 
+    @RequestMapping("/signupPhone")
+    public void signupPhone(@RequestBody JsonWatch jsonWatch )  {
+        logger.info("REQUEST: /signupPhone");
+
+        watchService.signupWatch(jsonWatch);
+    }
 
     }
