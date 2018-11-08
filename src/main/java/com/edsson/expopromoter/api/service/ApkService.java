@@ -2,6 +2,8 @@ package com.edsson.expopromoter.api.service;
 
 
 import com.edsson.expopromoter.api.model.Apk;
+import com.edsson.expopromoter.api.model.json.request.JsonUpdateApk;
+import com.edsson.expopromoter.api.model.json.request.JsonUpdateApkList;
 import com.edsson.expopromoter.api.repositories.ApkRepository;
 import net.dongliu.apk.parser.ApkFile;
 import net.dongliu.apk.parser.bean.ApkMeta;
@@ -97,27 +99,39 @@ public class ApkService {
         return apk;
     }
 
-    public List<String> getUpdatedApks() throws IOException {
+    public ArrayList<String> getUpdatedApks(JsonUpdateApkList list) throws IOException {
         File[] files = new File(PATH).listFiles();
-        List<String> updatedApks = new ArrayList<>();
+        ArrayList<String> updatedApks = new ArrayList<>();
         if (files != null && files.length > 0) {
             for (File file : files) {
 
-                DateTime updatePeriod = new DateTime(new Date());
-                updatePeriod = updatePeriod.minusDays(period);
-                DateTime lastUpdate = new DateTime(new Date(file.lastModified()));
+//                DateTime updatePeriod = new DateTime(new Date());
+//                updatePeriod = updatePeriod.minusDays(period);
+//                DateTime lastUpdate = new DateTime(new Date(file.lastModified()));
 
 
-                if ((lastUpdate.isAfter(updatePeriod))) {
+//                if ((lastUpdate.isAfter(updatePeriod))) {
 
                     ApkFile apkFile = new ApkFile(file);
                     ApkMeta apkMeta = apkFile.getApkMeta();
-                    String name = apkMeta.getPackageName().replace(".apk", "");
-                    if (repository.findApkByName(name) != null) {
-                        updatedApks.add(name);
+                    log.info("Apk info: [name: "+ apkMeta.getPackageName()+ ",version: "+ apkMeta.getVersionCode()+"]");
+
+                    for (JsonUpdateApk model: list.getModelList()){
+                        if (model.getPackageName().trim().equals(apkMeta.getPackageName())){
+                            if (model.getVersion()<apkMeta.getVersionCode()){
+                                String name = apkMeta.getPackageName().replace(".apk", "");
+                                if (repository.findApkByName(name) != null) {
+                                    updatedApks.add(name);
+                                }
+                            }
+                        }
                     }
+
+
+//                    String name = apkMeta.getPackageName().replace(".apk", "");
+
                     apkFile.close();
-                }
+//                }
             }
         }
         return updatedApks;

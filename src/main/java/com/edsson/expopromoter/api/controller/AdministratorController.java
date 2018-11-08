@@ -1,12 +1,16 @@
 package com.edsson.expopromoter.api.controller;
 
 
-import com.edsson.expopromoter.api.model.Watch;
-import com.edsson.expopromoter.api.model.json.JsonApk;
-import com.edsson.expopromoter.api.model.json.JsonUpdatedApks;
-import com.edsson.expopromoter.api.model.json.JsonWatch;
+import com.edsson.expopromoter.api.exceptions.EntityNotFoundException;
+import com.edsson.expopromoter.api.exceptions.FileNotFoundException;
+import com.edsson.expopromoter.api.exceptions.RegistrationException;
+import com.edsson.expopromoter.api.model.json.Message;
+import com.edsson.expopromoter.api.model.json.request.*;
+import com.edsson.expopromoter.api.model.json.response.GenericResponse;
+import com.edsson.expopromoter.api.model.json.response.JsonApk;
+import com.edsson.expopromoter.api.model.json.response.JsonUpdatedApks;
 import com.edsson.expopromoter.api.service.ApkService;
-import com.edsson.expopromoter.api.service.WatchService;
+import com.edsson.expopromoter.api.service.DeviceService;
 import io.swagger.annotations.Api;
 import net.dongliu.apk.parser.ApkFile;
 import net.dongliu.apk.parser.bean.ApkMeta;
@@ -31,6 +35,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -42,11 +47,14 @@ import java.util.List;
 public class AdministratorController {
     private final Logger logger = Logger.getLogger(AdministratorController.class);
     private final ApkService apkService;
-private final WatchService watchService;
+
+    private final DeviceService deviceService;
+
     @Autowired
-    public AdministratorController(WatchService watchService, ApkService apkService) {
+    public AdministratorController(DeviceService deviceService, ApkService apkService) {
         this.apkService = apkService;
-        this.watchService = watchService;
+
+        this.deviceService = deviceService;
     }
 
     @Value("${file.url}")
@@ -128,24 +136,75 @@ private final WatchService watchService;
 
     }
 
-    @RequestMapping("/get-updated")
-    public JsonUpdatedApks getUpdatedApks() throws IOException {
+//    @RequestMapping(value = "/get-updated", method = RequestMethod.GET)
+//    public JsonUpdatedApks getUpdatedApks() throws IOException {
+//        logger.info("REQUEST: /get-updated");
+//        List<String> apks = apkService.getUpdatedApks();
+//        return new JsonUpdatedApks(apks);
+//    }
+//
+
+    @RequestMapping(value = "/get-updated", method = RequestMethod.POST)
+    public JsonUpdatedApks getUpdatedApk(@RequestBody JsonUpdateApkList list) throws IOException, FileNotFoundException {
         logger.info("REQUEST: /get-updated");
-        List<String> apks = apkService.getUpdatedApks();
-        return new JsonUpdatedApks(apks);
+        if (list.getModelList() != null) {
+            ArrayList<String> apks = apkService.getUpdatedApks(list);
+            return new JsonUpdatedApks(apks);
+        } else {
+            throw new FileNotFoundException();
+        }
     }
 
-    @RequestMapping("/signupWatch")
-    public void signupWatch(@RequestBody JsonWatch jsonWatch )  {
+    @RequestMapping(value = "/signup-watch", method = RequestMethod.POST)
+    public GenericResponse signupWatch(@RequestBody JsonWatch jsonWatch) throws RegistrationException {
         logger.info("REQUEST: /signupWatch");
-        watchService.signupWatch(jsonWatch);
+        if (jsonWatch != null)
+            deviceService.signupWatch(jsonWatch);
+        return new GenericResponse(Message.MESSAGE_REQUEST_SUCCESS, new String[]{});
     }
 
-    @RequestMapping("/signupPhone")
-    public void signupPhone(@RequestBody JsonWatch jsonWatch )  {
+    @RequestMapping(value = "/signup-phone", method = RequestMethod.POST)
+    public GenericResponse signupPhone(@RequestBody JsonPhone jsonPhone) throws RegistrationException {
         logger.info("REQUEST: /signupPhone");
-
-        watchService.signupWatch(jsonWatch);
+        deviceService.signupPhone(jsonPhone);
+        return new GenericResponse(Message.MESSAGE_REQUEST_SUCCESS, new String[]{});
     }
 
+    @RequestMapping(value = "/tie-device", method = RequestMethod.POST)
+    public GenericResponse signupDevice(@RequestBody JsonTieDevices jsonTieDevices) {
+        logger.info("REQUEST: /tie-device");
+        deviceService.addWatchToPhone(jsonTieDevices);
+        return new GenericResponse(Message.MESSAGE_REQUEST_SUCCESS, new String[]{});
     }
+
+
+    @RequestMapping(value = "/send-measured-data", method = RequestMethod.POST)
+    public boolean sendMeasuredData(@RequestBody JsonData jsonData) throws EntityNotFoundException, FileNotFoundException {
+        logger.info("REQUEST: /send-measured-data");
+        deviceService.addMeasureForWatch(jsonData);
+//        return new GenericResponse(Message.MESSAGE_REQUEST_SUCCESS,new String[]{});
+        return true;
+    }
+
+    @RequestMapping(value = "/get-measured-data/{uid}", method = RequestMethod.GET)
+    public JsonMeasuredData getMeasuredData(@PathVariable String uid) throws EntityNotFoundException {
+        logger.info("REQUEST: /get-measured-data/" + uid);
+        return JsonMeasuredData.createFromDao(deviceService.getMeasuredData(uid));
+    }
+
+    @RequestMapping(value = "/send-location", method = RequestMethod.POST)
+    public boolean getMeasuredData(@RequestBody JsonLocationMessage jsonLocation) throws EntityNotFoundException {
+        logger.info("REQUEST: /send-location");
+        deviceService.addLocationForWatch(jsonLocation);
+//        return new GenericResponse(Message.MESSAGE_REQUEST_SUCCESS,new String[]{});
+        return true;
+    }
+
+
+    @RequestMapping(value = "/get-location/{uid}", method = RequestMethod.GET)
+    public JsonLocation getLocation(@PathVariable String uid) throws EntityNotFoundException {
+        logger.info("REQUEST: /get-location/" + uid);
+        return JsonLocation.createFromDao(deviceService.getLocation(uid));
+
+    }
+}

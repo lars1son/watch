@@ -1,4 +1,4 @@
-package com.edsson.expopromoter.api.model.json;
+package com.edsson.expopromoter.api.model.json.response;
 
 import com.edsson.expopromoter.api.model.Apk;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
